@@ -544,58 +544,30 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // ============================================================
-          // 🔒 FOLLOW GATE — real check via is_user_follow_business
-          // ============================================================
-          // We can only query follow status for a user we've had a messaging
-          // interaction with — which we always have here (they DM'd the keyword
-          // or tapped a postback). If they follow → deliver content. If not →
-          // send/re-send the lock card. If the check is UNAVAILABLE (API error,
-          // app not in Advanced Access, null) and they tapped the unlock button,
-          // we fall back to honor-system so a genuine follower isn't trapped.
-          if (content.check_follow === true) {
-            const isUnlockTap = triggerType === "postback" && triggerValue.startsWith("UNLOCK_CONTENT_")
-            let isFollowing = false
-            let checkOk = false
-            try {
-              const fRes = await fetch(
-                `https://graph.instagram.com/v24.0/${senderId}?fields=is_user_follow_business&access_token=${encodeURIComponent(user.access_token)}`,
-              )
-              const fData = await fRes.json()
-              if (fData.error) {
-                console.error("[v0] ⚠️ Follow check failed:", JSON.stringify(fData.error))
-              } else {
-                checkOk = true
-                isFollowing = fData.is_user_follow_business === true
-                console.log(`[v0] 🔎 Follow check for ${senderId}: ${isFollowing}`)
-              }
-            } catch (e) {
-              console.error("[v0] ⚠️ Follow check error:", e)
-            }
-
-            const deliver = isFollowing || (!checkOk && isUnlockTap)
-            if (!deliver) {
-              replyTextLog = "[Locked Content Gate]"
-              apiBody.message = {
-                attachment: {
-                  type: "template",
-                  payload: {
-                    template_type: "generic",
-                    elements: [
-                      {
-                        title: "🔒 Content Locked",
-                        subtitle: `Follow @${user.username}, then tap Done to unlock it!`,
-                        buttons: [
-                          { type: "web_url", url: `https://instagram.com/${user.username}`, title: "Follow Us" },
-                          { type: "postback", title: "Done ✅", payload: `UNLOCK_CONTENT_${match.id}` },
-                        ],
-                      },
-                    ],
-                  },
+          // Follow Gate (honor-system): on the initial trigger, show the lock
+          // card; when the user taps "Done ✅" (UNLOCK_CONTENT postback) we
+          // deliver the real content.
+          const isUnlockEvent = triggerType === "postback" && triggerValue.startsWith("UNLOCK_CONTENT_")
+          if (content.check_follow === true && !isUnlockEvent) {
+            replyTextLog = "[Locked Content Gate]"
+            apiBody.message = {
+              attachment: {
+                type: "template",
+                payload: {
+                  template_type: "generic",
+                  elements: [
+                    {
+                      title: "🔒 Content Locked",
+                      subtitle: `Follow @${user.username}, then tap Done to unlock it!`,
+                      buttons: [
+                        { type: "web_url", url: `https://instagram.com/${user.username}`, title: "Follow Us" },
+                        { type: "postback", title: "Done ✅", payload: `UNLOCK_CONTENT_${match.id}` },
+                      ],
+                    },
+                  ],
                 },
-              }
+              },
             }
-            // else: leave apiBody as the real content
           }
 
           // SEND REPLY
