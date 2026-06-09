@@ -31,6 +31,9 @@ export async function POST(request: NextRequest) {
     const clientId = process.env.INSTAGRAM_APP_ID
     const clientSecret = process.env.INSTAGRAM_APP_SECRET
     const redirectUri = process.env.NEXT_PUBLIC_INSTAGRAM_REDIRECT_URI
+    console.log("CLIENT_ID:", clientId)
+    console.log("REDIRECT_URI:", redirectUri)
+    console.log("CODE:", code)
 
     if (!clientId || !clientSecret || !redirectUri) {
       throw new Error("Missing Env Vars: Check INSTAGRAM_APP_ID")
