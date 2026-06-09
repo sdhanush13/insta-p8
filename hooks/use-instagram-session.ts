@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 
 export function useInstagramSession() {
@@ -10,13 +10,15 @@ export function useInstagramSession() {
 
     const searchParams = useSearchParams()
     const router = useRouter()
+    const hasProcessed = useRef(false)
 
     useEffect(() => {
         const code = searchParams.get("code")
 
         const handleSession = async () => {
             // CASE A: New Login from Instagram
-            if (code) {
+            if (code && !hasProcessed.current) {
+                hasProcessed.current = true
                 try {
                     const res = await fetch("/api/instagram/callback", {
                         method: "POST",

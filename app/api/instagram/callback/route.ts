@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     // 1. Env Vars
     const clientId = process.env.INSTAGRAM_APP_ID
     const clientSecret = process.env.INSTAGRAM_APP_SECRET
-    const redirectUri = process.env.NEXT_PUBLIC_INSTAGRAM_REDIRECT_URI
+    const redirectUri = "https://insta-p8-seven.vercel.app/api/instagram/callback"
     console.log("CLIENT_ID:", clientId)
     console.log("REDIRECT_URI:", redirectUri)
     console.log("CODE:", code)
@@ -51,7 +51,8 @@ export async function POST(request: NextRequest) {
     console.log("CLIENT_ID:", clientId)
     console.log("REDIRECT_URI:", redirectUri)
     console.log("TOKEN_PARAMS:", tokenParams.toString())
-
+    console.log("TOKEN_REQUEST_URL", "https://api.instagram.com/oauth/access_token")
+    console.log("TOKEN_REQUEST_BODY", tokenParams.toString())
     const tokenRes = await fetch("https://api.instagram.com/oauth/access_token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
