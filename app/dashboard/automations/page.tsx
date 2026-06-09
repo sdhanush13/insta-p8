@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react"
 import { useInstagramSession } from "@/hooks/use-instagram-session"
 import { AutomationList } from "@/components/dashboard/AutomationList"
 import { CreateRuleForm } from "@/components/dashboard/CreateRuleForm"
-import { MessageCircle, Send, Sparkles, Zap, Plus, Brain, Loader2 } from "lucide-react"
+import { MessageCircle, Send, Sparkles, Zap, Plus, Brain, Loader2, History } from "lucide-react"
 import { IceBreakersManager } from "@/components/dashboard/IceBreakersManager"
 import type { Automation } from "@/lib/types"
 
@@ -84,6 +84,30 @@ export default function AutomationsPage() {
     const handleDeleteRule = async (id: string) => {
         await fetch(`/api/automations?id=${id}`, { method: "DELETE" })
         fetchAutomations()
+    }
+
+    // Backfill: run comment automations on past unanswered comments
+    const [scanDays, setScanDays] = useState(7)
+    const [scanning, setScanning] = useState(false)
+    const [scanResult, setScanResult] = useState<any | null>(null)
+
+    const handleScan = async () => {
+        if (scanning) return
+        setScanning(true)
+        setScanResult(null)
+        try {
+            const res = await fetch("/api/automations/scan-comments", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId, days: scanDays }),
+            })
+            const data = await res.json()
+            setScanResult(data)
+        } catch {
+            setScanResult({ error: "Network error" })
+        } finally {
+            setScanning(false)
+        }
     }
 
     if (isSessionLoading) return <div className="h-screen flex items-center justify-center bg-black"><div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" /></div>
@@ -218,6 +242,61 @@ export default function AutomationsPage() {
                                 setShowCreateForm(false)
                             }}
                         />
+                    </div>
+                )}
+
+                {/* Backfill past comments (Comments only) */}
+                {activeTab === 'comment' && (
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 space-y-3">
+                        <div className="flex items-center gap-2">
+                            <History className="w-4 h-4 text-sky-400" />
+                            <span className="text-sm font-semibold text-sky-300">Run on past comments</span>
+                        </div>
+                        <p className="text-xs text-neutral-500">
+                            Scan recent comments and run your active comment rules on any you haven&apos;t replied to yet.
+                            Instagram only allows replying within <span className="text-neutral-300">7 days</span>, so that&apos;s the max.
+                        </p>
+                        <div className="flex items-center gap-3 flex-wrap">
+                            <label className="text-xs text-neutral-400 flex items-center gap-2">
+                                Last
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={7}
+                                    value={scanDays}
+                                    onChange={(e) => setScanDays(Math.min(7, Math.max(1, Number(e.target.value) || 1)))}
+                                    className="w-16 bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-sm text-white text-center focus:outline-none focus:border-sky-500/50"
+                                />
+                                day{scanDays !== 1 ? 's' : ''}
+                            </label>
+                            <button
+                                onClick={handleScan}
+                                disabled={scanning}
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold transition-all disabled:opacity-50"
+                            >
+                                {scanning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <History className="w-3.5 h-3.5" />}
+                                {scanning ? 'Scanning…' : 'Scan & Reply'}
+                            </button>
+                        </div>
+
+                        {scanResult && (
+                            <div className="text-xs rounded-xl border border-white/10 bg-black/30 p-3 mt-1">
+                                {scanResult.error ? (
+                                    <span className="text-red-400">{scanResult.error}</span>
+                                ) : (
+                                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-neutral-300">
+                                        <span>✅ Replied: <span className="font-bold text-emerald-400">{scanResult.replied}</span></span>
+                                        <span>🎯 Matched: <span className="font-bold text-white">{scanResult.matched}</span></span>
+                                        <span>🔍 Scanned: <span className="font-bold text-white">{scanResult.scanned}</span></span>
+                                        <span>⏭️ Skipped: <span className="text-neutral-400">{scanResult.skipped}</span></span>
+                                        {scanResult.errors > 0 && <span>⚠️ Errors: <span className="text-amber-400">{scanResult.errors}</span></span>}
+                                        {scanResult.cappedAt > 0 && (
+                                            <span className="w-full text-amber-400">Stopped at the {scanResult.cappedAt}-reply safety cap — run again to continue.</span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
 
