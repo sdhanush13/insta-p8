@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { useInstagramSession } from "@/hooks/use-instagram-session"
 import { Activity, Users, MessageCircle, Zap, Loader2 } from "lucide-react"
@@ -24,6 +25,7 @@ interface DashboardStats {
 
 export default function DashboardPage() {
     const { username, userId, isLoading: isSessionLoading } = useInstagramSession()
+    const router = useRouter()
     const [stats, setStats] = useState<DashboardStats | null>(null)
     const [loading, setLoading] = useState(true)
 
@@ -126,14 +128,22 @@ export default function DashboardPage() {
                 <Card className="p-6 bg-white/5 border-white/10 backdrop-blur-sm">
                     <h3 className="font-bold text-white mb-4">Quick Actions</h3>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="h-24 rounded-xl border border-dashed border-white/20 flex flex-col items-center justify-center hover:bg-white/5 cursor-pointer transition-colors group">
+                        <button
+                            type="button"
+                            onClick={() => router.push("/dashboard/automations?new=1")}
+                            className="h-24 rounded-xl border border-dashed border-white/20 flex flex-col items-center justify-center hover:bg-white/5 cursor-pointer transition-colors group"
+                        >
                             <Zap className="w-6 h-6 text-muted-foreground group-hover:text-purple-400 mb-2" />
                             <span className="text-xs font-medium text-muted-foreground">New Rule</span>
-                        </div>
-                        <div className="h-24 rounded-xl border border-dashed border-white/20 flex flex-col items-center justify-center hover:bg-white/5 cursor-pointer transition-colors group">
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => router.push("/dashboard/inbox")}
+                            className="h-24 rounded-xl border border-dashed border-white/20 flex flex-col items-center justify-center hover:bg-white/5 cursor-pointer transition-colors group"
+                        >
                             <Users className="w-6 h-6 text-muted-foreground group-hover:text-pink-400 mb-2" />
                             <span className="text-xs font-medium text-muted-foreground">View Audience</span>
-                        </div>
+                        </button>
                     </div>
                 </Card>
             </div>

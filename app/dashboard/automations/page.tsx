@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { useInstagramSession } from "@/hooks/use-instagram-session"
 import { AutomationList } from "@/components/dashboard/AutomationList"
 import { CreateRuleForm } from "@/components/dashboard/CreateRuleForm"
@@ -10,6 +11,7 @@ import type { Automation } from "@/lib/types"
 
 export default function AutomationsPage() {
     const { userId, isLoading: isSessionLoading } = useInstagramSession()
+    const searchParams = useSearchParams()
     const [automations, setAutomations] = useState<Automation[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<'comment' | 'dm' | 'story'>('comment')
@@ -80,6 +82,11 @@ export default function AutomationsPage() {
     useEffect(() => {
         if (userId) fetchAutomations()
     }, [userId, fetchAutomations])
+
+    // Auto-open the create form when arriving from the dashboard "New Rule" action
+    useEffect(() => {
+        if (searchParams.get("new") === "1") setShowCreateForm(true)
+    }, [searchParams])
 
     const handleDeleteRule = async (id: string) => {
         await fetch(`/api/automations?id=${id}`, { method: "DELETE" })
