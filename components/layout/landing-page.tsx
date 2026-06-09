@@ -4,9 +4,15 @@ import { Button } from "@/components/ui/button"
 import { Zap, MessageCircle, Shield, Clock } from "lucide-react"
 
 export function LandingPage() {
-  const handleLogin = () => {
-    window.location.href = `https://www.instagram.com/oauth/authorize?force_reauth=true&client_id=${process.env.NEXT_PUBLIC_INSTAGRAM_APP_ID}&redirect_uri=${process.env.NEXT_PUBLIC_INSTAGRAM_REDIRECT_URI}&response_type=code&scope=instagram_business_basic`
-  }
+const handleLogin = () => {
+  window.location.href =
+    `https://www.instagram.com/oauth/authorize?force_reauth=true` +
+    `&enable_fb_login=1` +
+    `&client_id=${process.env.NEXT_PUBLIC_INSTAGRAM_APP_ID}` +
+    `&redirect_uri=${encodeURIComponent(process.env.NEXT_PUBLIC_INSTAGRAM_REDIRECT_URI!)}` +
+    `&response_type=code` +
+    `&scope=instagram_business_basic`
+}
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-white selection:text-black overflow-hidden">

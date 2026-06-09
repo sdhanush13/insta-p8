@@ -6,6 +6,9 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code")
   const error = searchParams.get("error")
 
+  console.log("CODE_FROM_INSTAGRAM:", code)
+  console.log("ERROR_FROM_INSTAGRAM:", error)
+
   if (error) {
     const redirectUrl = new URL("/", request.url)
     redirectUrl.searchParams.set("error", error)
