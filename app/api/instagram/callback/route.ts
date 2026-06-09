@@ -120,6 +120,28 @@ export async function POST(request: NextRequest) {
 
     if (upsertError) throw upsertError
 
+    // 7. Subscribe this account to webhook fields.
+    // Configuring fields in the App Dashboard is NOT enough for Instagram API
+    // with Instagram Login — each connected account must be subscribed via
+    // POST /me/subscribed_apps, otherwise no comment/message events are
+    // delivered. Non-fatal: log and continue if it fails (e.g. token missing
+    // the manage_messages/manage_comments scopes — reconnect to grant them).
+    try {
+      const subscribedFields = "comments,messages,messaging_postbacks,message_reactions"
+      const subRes = await fetch(
+        `https://graph.instagram.com/v24.0/me/subscribed_apps?subscribed_fields=${subscribedFields}&access_token=${encodeURIComponent(accessToken)}`,
+        { method: "POST" }
+      )
+      const subData = await subRes.json()
+      if (subData.error) {
+        console.error("[v0] ⚠️ Webhook subscription failed:", JSON.stringify(subData.error))
+      } else {
+        console.log("[v0] 🔔 Webhook subscription:", JSON.stringify(subData))
+      }
+    } catch (e) {
+      console.error("[v0] ⚠️ Webhook subscription request error:", e)
+    }
+
     const response = NextResponse.json({ success: true, username, userId: loginUserId })
     response.cookies.set("insta_session", JSON.stringify({ username, userId: loginUserId }), {
       path: "/",

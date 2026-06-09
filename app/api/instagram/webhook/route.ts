@@ -234,6 +234,34 @@ export async function POST(request: NextRequest) {
                 }
               }
 
+              // ============================================================
+              // 🔒 FOLLOW GATE (Comment path)
+              // ============================================================
+              // If the rule is gated, don't send the real content yet. Send a
+              // lock card with "Follow Us" + "Done ✅". When the user taps
+              // "Done ✅" it fires an UNLOCK_CONTENT_<id> postback, handled in
+              // PART B, which then sends the real content (e.g. the location).
+              if (content.check_follow === true) {
+                apiBody.message = {
+                  attachment: {
+                    type: "template",
+                    payload: {
+                      template_type: "generic",
+                      elements: [
+                        {
+                          title: "🔒 One more step",
+                          subtitle: `Follow @${user.username}, then tap Done to unlock it.`,
+                          buttons: [
+                            { type: "web_url", url: `https://instagram.com/${user.username}`, title: "Follow Us" },
+                            { type: "postback", title: "Done ✅", payload: `UNLOCK_CONTENT_${match.id}` },
+                          ],
+                        },
+                      ],
+                    },
+                  },
+                }
+              }
+
               console.log("[v0] 📤 DM Body:", JSON.stringify(apiBody))
               try {
                 const dmRes = await fetch(
