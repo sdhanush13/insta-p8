@@ -6,9 +6,6 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code")
   const error = searchParams.get("error")
 
-  console.log("CODE_FROM_INSTAGRAM:", code)
-  console.log("ERROR_FROM_INSTAGRAM:", error)
-
   if (error) {
     const redirectUrl = new URL("/", request.url)
     redirectUrl.searchParams.set("error", error)
@@ -34,9 +31,7 @@ export async function POST(request: NextRequest) {
     const clientId = process.env.INSTAGRAM_APP_ID
     const clientSecret = process.env.INSTAGRAM_APP_SECRET
     const redirectUri = "https://insta-p8-seven.vercel.app/api/instagram/callback"
-    console.log("CLIENT_ID:", clientId)
-    console.log("REDIRECT_URI:", redirectUri)
-    console.log("CODE:", code)
+
 
     if (!clientId || !clientSecret || !redirectUri) {
       throw new Error("Missing Env Vars: Check INSTAGRAM_APP_ID")
@@ -51,11 +46,6 @@ export async function POST(request: NextRequest) {
       code,
     })
 
-    console.log("CLIENT_ID:", clientId)
-    console.log("REDIRECT_URI:", redirectUri)
-    console.log("TOKEN_PARAMS:", tokenParams.toString())
-    console.log("TOKEN_REQUEST_URL", "https://api.instagram.com/oauth/access_token")
-    console.log("TOKEN_REQUEST_BODY", tokenParams.toString())
     const tokenRes = await fetch("https://api.instagram.com/oauth/access_token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -63,9 +53,8 @@ export async function POST(request: NextRequest) {
     })
 
     const tokenData = await tokenRes.json()
-    console.log("TOKEN_RESPONSE:", JSON.stringify(tokenData, null, 2))
+    console.error("Instagram token error:", tokenData)
     if (!tokenRes.ok) {
-      console.error("TOKEN_RESPONSE:", JSON.stringify(tokenData, null, 2))
 
       return NextResponse.json(
         {

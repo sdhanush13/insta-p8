@@ -11,7 +11,7 @@ const handleLogin = () => {
     `&client_id=${process.env.NEXT_PUBLIC_INSTAGRAM_APP_ID}` +
     `&redirect_uri=${encodeURIComponent(process.env.NEXT_PUBLIC_INSTAGRAM_REDIRECT_URI!)}` +
     `&response_type=code` +
-    `&scope=instagram_business_basic`
+    `&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights`
 }
 
   return (
