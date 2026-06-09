@@ -48,6 +48,10 @@ export async function POST(request: NextRequest) {
       code,
     })
 
+    console.log("CLIENT_ID:", clientId)
+    console.log("REDIRECT_URI:", redirectUri)
+    console.log("TOKEN_PARAMS:", tokenParams.toString())
+
     const tokenRes = await fetch("https://api.instagram.com/oauth/access_token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -55,13 +59,18 @@ export async function POST(request: NextRequest) {
     })
 
     const tokenData = await tokenRes.json()
+    console.log("TOKEN_RESPONSE:", JSON.stringify(tokenData, null, 2))
     if (!tokenRes.ok) {
-      if (tokenData.error_message?.includes("authorization code has been used")) {
-        // Harmless double-fire from React StrictMode or double clicks
-        return NextResponse.json({ error: "Code already used" }, { status: 400 })
-      }
-      console.error("[v0] 🔴 Token Error:", JSON.stringify(tokenData, null, 2))
-      return NextResponse.json({ error: tokenData.error_description || "Token failed" }, { status: 400 })
+      console.error("TOKEN_RESPONSE:", JSON.stringify(tokenData, null, 2))
+
+      return NextResponse.json(
+        {
+          tokenResponse: tokenData,
+          clientId,
+          redirectUri,
+        },
+        { status: 400 }
+      )
     }
 
     const shortToken = tokenData.access_token
