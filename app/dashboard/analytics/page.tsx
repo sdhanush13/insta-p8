@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useInstagramSession } from "@/hooks/use-instagram-session"
 import { Card } from "@/components/ui/card"
 import { Users, UserPlus, Grid3x3, Eye, Heart, MessageCircle, TrendingUp, Loader2, ExternalLink } from "lucide-react"
@@ -32,23 +32,38 @@ export default function AnalyticsPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
+    const load = useCallback(async (silent = false) => {
+        if (!userId) return
+        if (!silent) setLoading(true)
+        try {
+            const [aRes, hRes] = await Promise.all([
+                fetch(`/api/instagram/analytics?userId=${userId}`),
+                fetch(`/api/instagram/follower-history?userId=${userId}`),
+            ])
+            const a = await aRes.json()
+            if (a.error) setError(a.error)
+            else { setData(a); setError(null) }
+            const h = await hRes.json()
+            if (Array.isArray(h)) setHistory(h)
+        } catch {
+            if (!silent) setError("Failed to load analytics")
+        } finally {
+            if (!silent) setLoading(false)
+        }
+    }, [userId])
+
     useEffect(() => {
         if (!userId) return
-        setLoading(true)
-        fetch(`/api/instagram/analytics?userId=${userId}`)
-            .then((res) => res.json())
-            .then((d) => {
-                if (d.error) setError(d.error)
-                else setData(d)
-            })
-            .catch(() => setError("Failed to load analytics"))
-            .finally(() => setLoading(false))
-
-        fetch(`/api/instagram/follower-history?userId=${userId}`)
-            .then((res) => res.json())
-            .then((d) => { if (Array.isArray(d)) setHistory(d) })
-            .catch(() => {})
-    }, [userId])
+        load()
+        // Auto-refresh: poll every 60s + refresh when the tab regains focus.
+        const interval = setInterval(() => load(true), 60_000)
+        const onFocus = () => load(true)
+        window.addEventListener("focus", onFocus)
+        return () => {
+            clearInterval(interval)
+            window.removeEventListener("focus", onFocus)
+        }
+    }, [userId, load])
 
     if (isSessionLoading || loading) {
         return (

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { useInstagramSession } from "@/hooks/use-instagram-session"
@@ -34,25 +34,34 @@ export default function DashboardPage() {
     const [stats, setStats] = useState<DashboardStats | null>(null)
     const [loading, setLoading] = useState(true)
 
+    const fetchStats = useCallback(async (silent = false) => {
+        if (!userId) return
+        if (!silent) setLoading(true)
+        try {
+            const res = await fetch(`/api/dashboard/stats?userId=${userId}`)
+            const data = await res.json()
+            if (data && !data.error) {
+                setStats(data)
+            }
+        } catch (err) {
+            console.error("Failed to load dashboard stats", err)
+        } finally {
+            if (!silent) setLoading(false)
+        }
+    }, [userId])
+
     useEffect(() => {
         if (!userId) return
-
-        const fetchStats = async () => {
-            try {
-                const res = await fetch(`/api/dashboard/stats?userId=${userId}`)
-                const data = await res.json()
-                if (data && !data.error) {
-                    setStats(data)
-                }
-            } catch (err) {
-                console.error("Failed to load dashboard stats", err)
-            } finally {
-                setLoading(false)
-            }
-        }
-
         fetchStats()
-    }, [userId])
+        // Auto-refresh: poll every 30s + refresh when the tab regains focus.
+        const interval = setInterval(() => fetchStats(true), 30_000)
+        const onFocus = () => fetchStats(true)
+        window.addEventListener("focus", onFocus)
+        return () => {
+            clearInterval(interval)
+            window.removeEventListener("focus", onFocus)
+        }
+    }, [userId, fetchStats])
 
     if (isSessionLoading || loading) {
         return (
