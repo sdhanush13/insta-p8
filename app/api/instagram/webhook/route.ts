@@ -2,6 +2,7 @@
 
 import { type NextRequest, NextResponse } from "next/server"
 import { getSupabaseServerClient } from "@/lib/supabase-server"
+import { generateAiReply } from "@/lib/groq"
 
 const WEBHOOK_VERIFY_TOKEN = process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN || "your_verify_token"
 
@@ -413,6 +414,14 @@ export async function POST(request: NextRequest) {
             continue
           }
 
+          // Human-readable text for the inbox. For postbacks, the raw payload
+          // (e.g. UNLOCK_CONTENT_<uuid>) is an internal control value — store the
+          // button label the user tapped instead, falling back to a generic note.
+          const displayContent =
+            triggerType === "postback"
+              ? event.postback.title || "🔘 Tapped a button"
+              : event.message?.text || triggerValue
+
           console.log(`[v0] 📩 DM from ${senderId}: "${triggerValue}"`)
 
           // ============================================================
@@ -471,7 +480,7 @@ export async function POST(request: NextRequest) {
                 user_id: user.id,
                 sender_id: senderId,
                 sender_username: "User", // We don't have their username easily here
-                content: triggerValue,
+                content: displayContent,
                 is_from_instagram: true, // True = FROM the user TO us
               })
             }
@@ -514,7 +523,50 @@ export async function POST(request: NextRequest) {
           }
 
           if (!match) {
-            console.log(`[v0] ❌ No match.`)
+            // No automation matched — fall back to AI auto-reply if the user has
+            // it enabled and a Groq key is configured. Plain-text DMs only.
+            if (triggerType === "keyword" && user.groq_auto_reply_enabled === true && process.env.GROQ_API_KEY) {
+              const aiText = await generateAiReply(displayContent, user.ai_context)
+              if (aiText) {
+                try {
+                  const aiRes = await fetch(
+                    `https://graph.instagram.com/v24.0/me/messages?access_token=${encodeURIComponent(user.access_token)}`,
+                    {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ recipient: { id: senderId }, message: { text: aiText } }),
+                    },
+                  )
+                  const aiJson = await aiRes.json()
+                  if (aiJson.error) {
+                    console.error("[v0] 🔴 AI Reply Failed:", JSON.stringify(aiJson.error))
+                  } else {
+                    console.log("[v0] 🤖 AI Reply Sent!")
+                    const { data: aiConv } = await supabase
+                      .from("conversations")
+                      .select("id")
+                      .eq("user_id", user.id)
+                      .eq("recipient_id", senderId)
+                      .single()
+                    if (aiConv) {
+                      await supabase.from("messages").insert({
+                        id: `mid_ai_${Date.now()}_${Math.random()}`,
+                        conversation_id: aiConv.id,
+                        user_id: user.id,
+                        sender_id: user.business_account_id,
+                        sender_username: user.username,
+                        content: aiText,
+                        is_from_instagram: false,
+                      })
+                    }
+                  }
+                } catch (e) {
+                  console.error("[v0] AI Reply network error:", e)
+                }
+              }
+            } else {
+              console.log(`[v0] ❌ No match.`)
+            }
             continue
           }
 

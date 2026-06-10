@@ -27,7 +27,7 @@ export default function PublisherPage() {
     }
 
     return (
-        <div className="space-y-6 max-w-5xl mx-auto pb-20">
+        <div className="space-y-6 max-w-5xl mx-auto p-4 md:p-8 pb-20">
             <div className="flex flex-col gap-2">
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 bg-clip-text text-transparent w-fit">
                     Reels Publisher

@@ -674,8 +674,10 @@ export function ContentPool({ userId }: ContentPoolProps) {
                             </div>
 
                             <div className="p-3">
-                                <p className="text-sm text-white line-clamp-2 min-h-[40px]">
-                                    {item.caption || "No caption"}
+                                <p className="text-sm text-white line-clamp-2 min-h-[40px] break-words">
+                                    {item.caption
+                                        ? item.caption.slice(0, 140) + (item.caption.length > 140 ? "…" : "")
+                                        : "No caption"}
                                 </p>
                                 <div className="flex justify-end mt-2">
                                     <Button

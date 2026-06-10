@@ -32,14 +32,17 @@ export default function DashboardLayout({
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col md:pl-64 transition-all duration-300">
+            {/* min-w-0 is critical: without it this flex child grows to fit its
+                widest descendant (e.g. a long caption), pushing the whole page
+                wider than the viewport and breaking truncate/line-clamp. */}
+            <div className="flex-1 min-w-0 flex flex-col md:pl-64 transition-all duration-300">
                 {/* Mobile Header (Visible only on small screens) */}
                 <header className="md:hidden h-16 border-b border-white/10 bg-black flex items-center justify-between px-4 sticky top-0 z-40">
                     <span className="font-bold text-lg tracking-tight text-white">InstaAuto</span>
                     <MobileNav username={username || "User"} onLogout={logout} />
                 </header>
 
-                <main className="flex-1 relative overflow-auto">
+                <main className="flex-1 relative overflow-x-hidden overflow-y-auto">
                     {children}
                 </main>
             </div>
