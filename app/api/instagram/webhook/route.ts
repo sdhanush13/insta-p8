@@ -124,6 +124,9 @@ export async function POST(request: NextRequest) {
         continue
       }
 
+      // Record last webhook activity for the health panel (best-effort).
+      await supabase.from("users").update({ last_webhook_at: new Date().toISOString() }).eq("id", user.id)
+
       const { data: automations } = await supabase
         .from("automations")
         .select("*")
@@ -350,7 +353,12 @@ export async function POST(request: NextRequest) {
             console.log(`✨ Story automation matched: ${match.name}`)
 
             try {
-              const content = JSON.parse(match.response_content)
+              // response_content is stored as JSONB (object). Guard against the
+              // legacy case where it might be a stringified JSON.
+              const content =
+                typeof match.response_content === "string"
+                  ? JSON.parse(match.response_content)
+                  : match.response_content
               const apiBody: any = { recipient: { id: senderId } }
 
               if (content.message) {

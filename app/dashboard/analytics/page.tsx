@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useInstagramSession } from "@/hooks/use-instagram-session"
 import { Card } from "@/components/ui/card"
 import { Users, UserPlus, Grid3x3, Eye, Heart, MessageCircle, TrendingUp, Loader2, ExternalLink } from "lucide-react"
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
 
 interface Analytics {
     username: string
@@ -27,6 +28,7 @@ const fmt = (n: number) => (n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) +
 export default function AnalyticsPage() {
     const { userId, isLoading: isSessionLoading } = useInstagramSession()
     const [data, setData] = useState<Analytics | null>(null)
+    const [history, setHistory] = useState<{ captured_on: string; followers_count: number }[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
@@ -41,6 +43,11 @@ export default function AnalyticsPage() {
             })
             .catch(() => setError("Failed to load analytics"))
             .finally(() => setLoading(false))
+
+        fetch(`/api/instagram/follower-history?userId=${userId}`)
+            .then((res) => res.json())
+            .then((d) => { if (Array.isArray(d)) setHistory(d) })
+            .catch(() => {})
     }, [userId])
 
     if (isSessionLoading || loading) {
@@ -93,6 +100,36 @@ export default function AnalyticsPage() {
                     </Card>
                 ))}
             </div>
+
+            {/* Follower growth */}
+            {history.length >= 2 && (
+                <Card className="p-6 bg-white/5 border-white/10 backdrop-blur-sm">
+                    <h3 className="font-bold text-white mb-4">Follower Growth</h3>
+                    <div className="h-64 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={history} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="fg" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#a855f7" stopOpacity={0.4} />
+                                        <stop offset="100%" stopColor="#a855f7" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <XAxis
+                                    dataKey="captured_on"
+                                    tick={{ fill: "#71717a", fontSize: 11 }}
+                                    tickFormatter={(d) => new Date(d).toLocaleDateString([], { month: "short", day: "numeric" })}
+                                />
+                                <YAxis tick={{ fill: "#71717a", fontSize: 11 }} domain={["auto", "auto"]} width={45} />
+                                <Tooltip
+                                    contentStyle={{ background: "#18181b", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#fff" }}
+                                    labelFormatter={(d) => new Date(d).toLocaleDateString()}
+                                />
+                                <Area type="monotone" dataKey="followers_count" name="Followers" stroke="#a855f7" fill="url(#fg)" strokeWidth={2} />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </Card>
+            )}
 
             {/* Top posts */}
             <Card className="p-6 bg-white/5 border-white/10 backdrop-blur-sm">

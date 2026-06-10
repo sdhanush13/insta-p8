@@ -13,6 +13,11 @@ interface DashboardStats {
         audienceReached: number
         messagesSent: number
     }
+    weekly?: {
+        sent: number
+        received: number
+        followerChange: number
+    }
     recentActivity: Array<{
         id: string
         content: string
@@ -94,6 +99,34 @@ export default function DashboardPage() {
                     icon={<Users className="w-5 h-5 text-pink-400" />}
                 />
             </div>
+
+            {/* This Week summary */}
+            {stats?.weekly && (
+                <Card className="p-6 bg-gradient-to-br from-purple-900/20 to-blue-900/20 border-white/10">
+                    <h3 className="font-bold text-white mb-4 flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-purple-400" /> This Week
+                    </h3>
+                    <div className="grid grid-cols-3 gap-4">
+                        <div>
+                            <p className="text-2xl font-bold text-white">{stats.weekly.sent}</p>
+                            <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">DMs Sent</p>
+                        </div>
+                        <div>
+                            <p className="text-2xl font-bold text-white">{stats.weekly.received}</p>
+                            <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Messages In</p>
+                        </div>
+                        <div>
+                            <p className={`text-2xl font-bold ${stats.weekly.followerChange >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                                {stats.weekly.followerChange >= 0 ? "+" : ""}{stats.weekly.followerChange}
+                            </p>
+                            <p className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Followers</p>
+                        </div>
+                    </div>
+                    {stats.weekly.followerChange === 0 && (
+                        <p className="text-[11px] text-neutral-600 mt-3">Follower tracking starts once the daily snapshot has run for 2+ days.</p>
+                    )}
+                </Card>
+            )}
 
             {/* Recent Activity */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

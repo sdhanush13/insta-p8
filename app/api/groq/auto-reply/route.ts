@@ -45,8 +45,12 @@ export async function PUT(request: NextRequest) {
     if (error) throw error
 
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch (error: any) {
     console.error("Groq settings PUT error:", error)
-    return NextResponse.json({ error: "Failed to save settings" }, { status: 500 })
+    // Surface the real cause (e.g. missing column) instead of a generic message.
+    return NextResponse.json(
+      { error: "Failed to save settings", detail: error?.message, code: error?.code },
+      { status: 500 },
+    )
   }
 }

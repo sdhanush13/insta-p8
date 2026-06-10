@@ -43,12 +43,50 @@ export async function GET(request: NextRequest) {
             .order("created_at", { ascending: false })
             .limit(5)
 
+        // 6. Weekly summary (last 7 days)
+        const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString()
+
+        const { count: weeklySent } = await supabase
+            .from("messages")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", userId)
+            .eq("is_from_instagram", false)
+            .gte("created_at", weekAgo)
+
+        const { count: weeklyReceived } = await supabase
+            .from("messages")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", userId)
+            .eq("is_from_instagram", true)
+            .gte("created_at", weekAgo)
+
+        // Follower change from snapshots (guarded — table may not exist yet)
+        let followerChange = 0
+        try {
+            const { data: snaps } = await supabase
+                .from("follower_snapshots")
+                .select("captured_on, followers_count")
+                .eq("user_id", userId)
+                .gte("captured_on", new Date(Date.now() - 8 * 86_400_000).toISOString().slice(0, 10))
+                .order("captured_on", { ascending: true })
+            if (snaps && snaps.length >= 2) {
+                followerChange = snaps[snaps.length - 1].followers_count - snaps[0].followers_count
+            }
+        } catch {
+            /* snapshots table not set up yet */
+        }
+
         return NextResponse.json({
             metrics: {
                 totalAutomations: automationsCount || 0,
                 activeTriggers: activeTriggersCount || 0,
                 audienceReached: audienceCount || 0,
                 messagesSent: messagesSentCount || 0,
+            },
+            weekly: {
+                sent: weeklySent || 0,
+                received: weeklyReceived || 0,
+                followerChange,
             },
             recentActivity: recentMessages || []
         })
