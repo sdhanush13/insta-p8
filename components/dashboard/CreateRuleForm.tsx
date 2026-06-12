@@ -588,7 +588,7 @@ export function CreateRuleForm({ userId, triggerSource, onSuccess, editingRule }
         </div>
         <div className="text-left flex-1">
           <p className={`text-sm font-bold ${checkFollow ? 'text-amber-400' : 'text-white'}`}>Follow Gate</p>
-          <p className="text-[11px] text-neutral-500">Only reply to your followers</p>
+          <p className="text-[11px] text-neutral-500">Ask them to follow & confirm before unlocking</p>
         </div>
         <div className={`w-5 h-5 rounded-full border-2 transition-all ${
           checkFollow ? 'border-amber-500 bg-amber-500' : 'border-white/20'
@@ -617,7 +617,7 @@ export function CreateRuleForm({ userId, triggerSource, onSuccess, editingRule }
         {checkFollow && (
           <div className="flex items-center gap-2 text-sm">
             <span className="text-neutral-500">Gate:</span>
-            <span className="text-amber-400 font-medium">Followers only</span>
+            <span className="text-amber-400 font-medium">Follow to unlock</span>
           </div>
         )}
       </div>

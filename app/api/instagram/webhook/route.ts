@@ -253,11 +253,11 @@ export async function POST(request: NextRequest) {
                       template_type: "generic",
                       elements: [
                         {
-                          title: "🔒 One more step",
-                          subtitle: `Follow @${user.username}, then tap Done to unlock it.`,
+                          title: "Uh oh — one more step 👀",
+                          subtitle: `Looks like you haven't followed @${user.username} yet. Tap to visit the profile and follow, then confirm below to unlock it 😄`,
                           buttons: [
-                            { type: "web_url", url: `https://instagram.com/${user.username}`, title: "Follow Us" },
-                            { type: "postback", title: "Done ✅", payload: `UNLOCK_CONTENT_${match.id}` },
+                            { type: "web_url", url: `https://instagram.com/${user.username}`, title: "Visit Profile" },
+                            { type: "postback", title: "I'm following ✅", payload: `UNLOCK_CONTENT_${match.id}` },
                           ],
                         },
                       ],
@@ -617,11 +617,11 @@ export async function POST(request: NextRequest) {
                   template_type: "generic",
                   elements: [
                     {
-                      title: "🔒 Content Locked",
-                      subtitle: `Follow @${user.username}, then tap Done to unlock it!`,
+                      title: "Uh oh — one more step 👀",
+                      subtitle: `Looks like you haven't followed @${user.username} yet. Tap to visit the profile and follow, then confirm below to unlock it 😄`,
                       buttons: [
-                        { type: "web_url", url: `https://instagram.com/${user.username}`, title: "Follow Us" },
-                        { type: "postback", title: "Done ✅", payload: `UNLOCK_CONTENT_${match.id}` },
+                        { type: "web_url", url: `https://instagram.com/${user.username}`, title: "Visit Profile" },
+                        { type: "postback", title: "I'm following ✅", payload: `UNLOCK_CONTENT_${match.id}` },
                       ],
                     },
                   ],
